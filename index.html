@@ -1,1 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Weather Map Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://tailwindcss.com"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://jsdelivr.net"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 h-screen flex flex-col overflow-hidden">
 
+    <!-- Header Navigation -->
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white">
+                <i data-lucide="globe" class="w-6 h-6 animate-spin-slow"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">weather<span class="text-blue-500">maps</span><span class="text-xs bg-blue-500/20 text-blue-400 font-semibold px-2 py-0.5 rounded ml-2">LIVE</span></h1>
+                <p class="text-xs text-gray-400">Open-source global atmospheric telemetry dashboard</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="https://github.com" target="_blank" class="flex items-center space-x-2 text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition border border-gray-700">
+                <i data-lucide="github" class="w-4 h-4"></i>
+                <span>Deploy to GitHub Pages</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- Left Control Panel Sidebar -->
+        <aside class="w-96 bg-gray-900 border-r border-gray-800 flex flex-col z-10 custom-scrollbar overflow-y-auto">
+            <!-- Metric Layer Selector -->
+            <div class="p-6 border-b border-gray-800">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Map Layers</h2>
+                <div class="grid grid-cols-2 gap-2" id="layer-toggles">
+                    <button onclick="switchLayer('temp')" id="btn-temp" class="layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-blue-600/10 border-blue-500 text-blue-400">
+                        <i data-lucide="thermometer" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">Temperature</span>
+                    </button>
+                    <button onclick="switchLayer('wind')" id="btn-wind" class="layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-800">
+                        <i data-lucide="wind" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">Wind Speed</span>
+                    </button>
+                    <button onclick="switchLayer('precip')" id="btn-precip" class="layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-800">
+                        <i data-lucide="cloud-rain" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">Precipitation</span>
+                    </button>
+                    <button onclick="switchLayer('impact')" id="btn-impact" class="layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-800">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">Carbon Impact</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Region Live Details Card -->
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Region Telemetry</h2>
+                        <span id="active-coordinates" class="text-xs font-mono text-gray-500">51.51° N, 0.13° W</span>
+                    </div>
+
+                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 mb-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 id="region-name" class="text-xl font-bold">Western Europe</h3>
+                                <p id="region-country" class="text-xs text-gray-400">Regional Substation Hub</p>
+                            </div>
+                            <span id="region-status" class="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live Sync
+                            </span>
+                        </div>
+
+                        <!-- Core Telemetry Grid -->
+                        <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-800/60">
+                            <div>
+                                <span class="text-xs text-gray-500 block">Temperature</span>
+                                <span id="stat-temp" class="text-2xl font-bold tracking-tight text-white">14°C</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">Wind Velocity</span>
+                                <span id="stat-wind" class="text-2xl font-bold tracking-tight text-white">18 km/h</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">Precipitation</span>
+                                <span id="stat-precip" class="text-2xl font-bold tracking-tight text-white">12%</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-gray-500 block">Carbon Intensity</span>
+                                <span id="stat-aqi" class="text-2xl font-bold tracking-tight text-emerald-400">Low</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytical Live Charts -->
+                <div class="mt-auto">
+                    <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">24h Barometric Trend Vector</h4>
+                    <div class="bg-gray-950 p-3 rounded-xl border border-gray-800 h-48">
+                        <canvas id="telemetryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Map Simulation Workspace -->
+        <div class="flex-1 relative bg-slate-900 overflow-hidden flex flex-col">
+            
+            <!-- Map Legend -->
+            <div class="absolute top-6 right-6 bg-gray-900/90 backdrop-blur border border-gray-800 p-4 rounded-xl shadow-2xl z-20 w-64">
+                <h4 id="legend-title" class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Temperature Spectrum</h4>
+                <div id="legend-gradient" class="h-3 w-full rounded-md bg-gradient-to-r from-blue-500 via-green-400 to-red-500 mb-2"></div>
+                <div class="flex justify-between text-xs text-gray-400 font-mono">
+                    <span id="legend-min">-10°C</span>
+                    <span id="legend-mid">15°C</span>
+                    <span id="legend-max">40°C</span>
+                </div>
+            </div>
+
+            <!-- Canvas Grid Map Layout -->
+            <div class="flex-1 w-full relative grid grid-cols-1 md:grid-cols-3 grid-rows-2 p-8 gap-6 bg-gradient-to-b from-slate-950 to-slate-900 overflow-y-auto">
+                
+                <!-- Region 1: North America -->
+                <div onclick="selectRegion('na')" id="region-na" class="map-node border rounded-2xl relative overflow-hidden cursor-pointer group transition duration-300 transform hover:-translate-y-1 shadow-lg bg-slate-900/40 border-gray-800 hover:border-blue-500">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
+                    <div class="absolute bottom-4 left-4">
+                        <p class="text-xs font-mono text-gray-500 uppercase tracking-widest">Zone 01</p>
+                        <h3 class="text-lg font-bold">North America</h3>
+                    </div>
+                    <div class="absolute top-4 right-4 bg-gray-950/80 backdrop-blur px-2.5 py-1 rounded-lg border border-gray-800 text-sm font-mono node-value text-blue-400">8°C</div>
+                </div>
+
+                <!-- Region 2: Western Europe -->
+                <div onclick="selectRegion('eu')" id="region-eu" class="map-node border rounded-2xl relative overflow-hidden cursor-pointer group transition duration-300 transform hover:-translate-y-1 shadow-lg bg-slate-900/40 border-blue-500/50 ring-2 ring-blue-500/20">
+                    <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+Use code with caution.Zone 02Western Europe14°CZone 03Northern Asia-8°CZone 04South America28°CZone 05Africa Sub-Sahara34°CZone 06Oceania & Aus22°CTimeline Cycle09:00 AM UTC00:0004:0008:0012:0016:0020:00// Primary Application State Enginelet activeLayer = 'temp';let currentRegion = 'eu';let currentSimulationTime = 9;let isPlaying = false;let simInterval = null;let trendChart;// Structured Database Map Core Coordinates & Baselinesconst regionalDatabase = {na: { name: "North America", sub: "United States / Canada", coords: "45.00° N, 100.00° W", baseTemp: 8, baseWind: 24, basePrecip: 65, baseImpact: "Moderate", chartData: [1008, 1012, 1015, 1011, 1009, 1013] },eu: { name: "Western Europe", sub: "Regional Substation Hub", coords: "51.51° N, 0.13° W", baseTemp: 14, baseWind: 18, basePrecip: 12, baseImpact: "Low", chartData: [1014, 1016, 1013, 1015, 1018, 1016] },asia: { name: "Northern Asia", sub: "Siberia Remote Sectors", coords: "60.00° N, 105.00° E", baseTemp: -8, baseWind: 32, basePrecip: 80, baseImpact: "Low", chartData: [998, 1002, 1005, 1001, 999, 1003] },sa: { name: "South America", sub: "Amazonia Basin Network", coords: "15.00° S, 60.00° W", baseTemp: 28, baseWind: 12, basePrecip: 95, baseImpact: "Low", chartData: [1010, 1009, 1011, 1012, 1010, 1008] },af: { name: "Africa Sub-Sahara", sub: "Continental Central Grid", coords: "0.00° N, 20.00° E", baseTemp: 34, baseWind: 15, basePrecip: 5, baseImpact: "High", chartData: [1005, 1008, 1010, 1007, 1004, 1006] },oc: { name: "Oceania & Aus", sub: "Pacific Rim Infrastructure", coords: "25.27° S, 133.78° E", baseTemp: 22, baseWind: 42, basePrecip: 40, baseImpact: "Moderate", chartData: [1012, 1014, 1011, 1009, 1013, 1015] }};const layerMeta = {temp: { title: "Temperature Spectrum", min: "-10°C", mid: "15°C", max: "40°C", gradient: "from-blue-500 via-green-400 to-red-500", suffix: "°C" },wind: { title: "Wind Speed Velocity", min: "0 km/h", mid: "25 km/h", max: "60 km/h", gradient: "from-slate-600 via-teal-400 to-cyan-300", suffix: " km/h" },precip: { title: "Precipitation Rate", min: "0%", mid: "50%", max: "100%", gradient: "from-gray-700 via-blue-400 to-indigo-600", suffix: "%" },impact: { title: "Carbon Emission Load", min: "Low", mid: "Moderate", max: "High", gradient: "from-emerald-500 via-yellow-400 to-purple-600", suffix: "" }};// Render Data Visualization Graph Enginefunction initChart() {const ctx = document.getElementById('telemetryChart').getContext('2d');trendChart = new Chart(ctx, {type: 'line',data: {labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],datasets: [{label: 'Atmospheric Pressure (hPa)',data: regionalDatabase[currentRegion].chartData,borderColor: '#3b82f6',backgroundColor: 'rgba(59, 130, 246, 0.05)',borderWidth: 2,tension: 0.4,fill: true,pointBackgroundColor: '#3b82f6',pointRadius: 3}]},options: {responsive: true,maintainAspectRatio: false,plugins: { legend: { display: false } },scales: {x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b7280', font: { size: 10 } } },y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b7280', font: { size: 10 } } }}}});}// Calculation Helpers for Dynamic Time-of-day Multipliersfunction calculateCurrentValue(regionKey, layerKey) {const region = regionalDatabase[regionKey];const timeFactor = Math.sin((currentSimulationTime - 6) * Math.PI / 12); // Fluctuates through diurnal shift cycleif (layerKey === 'temp') {return Math.round(region.baseTemp + (timeFactor * 4));} else if (layerKey === 'wind') {return Math.round(Math.max(0, region.baseWind + (timeFactor * 6)));} else if (layerKey === 'precip') {return Math.round(Math.min(100, Math.max(0, region.basePrecip + (timeFactor * 10))));} else {return region.baseImpact;}}// Layer Context Switch Execution Loopsfunction switchLayer(layerKey) {activeLayer = layerKey;// Adjust Layer Button Highlight Layout Statesdocument.querySelectorAll('.layer-btn').forEach(btn => {btn.className = "layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-800";});document.getElementById(btn-${layerKey}).className = "layer-btn flex items-center space-x-2 p-3 rounded-xl border transition text-left bg-blue-600/10 border-blue-500 text-blue-400";// Remap UI Legend Scalesconst meta = layerMeta[layerKey];document.getElementById('legend-title').innerText = meta.title;document.getElementById('legend-min').innerText = meta.min;document.getElementById('legend-mid').innerText = meta.mid;document.getElementById('legend-max').innerText = meta.max;document.getElementById('legend-gradient').className = h-3 w-full rounded-md bg-gradient-to-r ${meta.gradient} mb-2;updateInterfaceTelemetry();}// Region Node Selection Controllerfunction selectRegion(regionKey) {currentRegion = regionKey;// Manage Map Node Borders UI Grid State Layout Ringsdocument.querySelectorAll('.map-node').forEach(node => {node.className = "map-node border rounded-2xl relative overflow-hidden cursor-pointer group transition duration-300 transform hover:-translate-y-1 shadow-lg bg-slate-900/40 border-gray-800 hover:border-blue-500";});document.getElementById(region-${regionKey}).className = "map-node border rounded-2xl relative overflow-hidden cursor-pointer group transition duration-300 transform hover:-translate-y-1 shadow-lg bg-slate-900/40 border-blue-500/50 ring-2 ring-blue-500/20";// Refresh Analytical Metrics Linear Graph Vectorsif (trendChart) {trendChart.data.datasets[0].data = regionalDatabase[regionKey].chartData;trendChart.update();}updateInterfaceTelemetry();}// Sync and Cascade Workspace Global States Natively across DOM Cardsfunction updateInterfaceTelemetry() {const currentData = regionalDatabase[currentRegion];// Inject Main Labelsdocument.getElementById('region-name').innerText = currentData.name;document.getElementById('region-country').innerText = currentData.sub;document.getElementById('active-coordinates').innerText = currentData.coords;// Compute Current Iteration Matrix Array Metricsconst activeTemp = calculateCurrentValue(currentRegion, 'temp');const activeWind = calculateCurrentValue(currentRegion, 'wind');const activePrecip = calculateCurrentValue(currentRegion, 'precip');const activeImpact = calculateCurrentValue(currentRegion, 'impact');document.getElementById('stat-temp').innerText = ${activeTemp}°C;document.getElementById('stat-wind').innerText = ${activeWind} km/h;document.getElementById('stat-precip').innerText = ${activePrecip}%;const impactEl = document.getElementById('stat-aqi');impactEl.innerText = activeImpact;if (activeImpact === 'High') {impactEl.className = "text-2xl font-bold tracking-tight text-purple-400";} else if (activeImpact === 'Moderate') {impactEl.className = "text-2xl font-bold tracking-tight text-amber-400";} else {impactEl.className = "text-2xl font-bold tracking-tight text-emerald-400";}// Repopulate Interactive Value Nodes Across the Graphic LayoutObject.keys(regionalDatabase).forEach(key => {const val = calculateCurrentValue(key, activeLayer);const suffix = layerMeta[activeLayer].suffix;document.querySelector(#region-${key} .node-value).innerText = ${val}${suffix};});}// Slider Event Sync Handlersfunction updateTimeline(val) {currentSimulationTime = parseInt(val);const displayHour = currentSimulationTime === 0 || currentSimulationTime === 12 ? 12 : currentSimulationTime % 12;const hourString = displayHour.toString().padStart(2, '0');const period = currentSimulationTime >= 12 ? 'PM' : 'AM';document.getElementById('timeline-time').innerText = ${hourString}:00 ${period} UTC;updateInterfaceTelemetry();}// Automated Global Interval Frame Clock Loopfunction toggleSimulation() {isPlaying = !isPlaying;const icon = document.getElementById('play-icon');const btn = document.getElementById('play-btn');if (isPlaying) {icon.setAttribute('data-lucide', 'pause');btn.className = "bg-amber-600 hover:bg-amber-500 text-white p-2.5 rounded-lg transition shadow-md shadow-amber-600/20";lucide.createIcons();simInterval = setInterval(() => {currentSimulationTime = (currentSimulationTime + 1) % 24;document.getElementById('timeline-slider').value = currentSimulationTime;updateTimeline(currentSimulationTime);}, 1200);} else {icon.setAttribute('data-lucide', 'play');btn.className = "bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-lg transition shadow-md shadow-blue-600/20";lucide.createIcons();clearInterval(simInterval);}}// Document Initialization Natively Triggered Lifecycleswindow.addEventListener('DOMContentLoaded', () => {lucide.createIcons();initChart();updateInterfaceTelemetry();})
